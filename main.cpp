@@ -27,6 +27,29 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+void setCoord(float* coords, int par1_idx, int par2_idx, int* cur_len)
+{
+    coords[*cur_len] = (coords[par1_idx] + coords[par2_idx]) / 2;
+    coords[*cur_len + 1] = (coords[par1_idx + 1] + coords[par2_idx + 1]) / 2;
+    *cur_len = *cur_len + 3;
+}
+
+void miniTrigGen(float* coords, int* cur_len, int par_trig)
+{
+    for (int i = 0; i < 3; i++) {
+        setCoord(coords, par_trig + 3*i, par_trig + 3*i, cur_len);
+        setCoord(coords, par_trig + 3*i, par_trig + 3*(i+1)%9, cur_len);
+        setCoord(coords, par_trig + 3*i, par_trig + 3*(i+2)%9, cur_len);
+    }
+}
+
+float rt3 = 1.732;
+float vertices[150000] = {
+        0,  rt3 / 2, 0.0f,
+        -0.75f, -rt3 / 4, 0.0f,
+        0.75f, -rt3 / 4, 0.0f,
+};
+
 int main()
 {
     glfwInit();
@@ -64,26 +87,23 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    float vertices[] = {
-            0.5f,  0.5f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            -0.5f, -0.5f, 0.0f,
-            -0.5f,  0.5f, 0.0f
-    };
-    unsigned int indices[] = {  // note that we start from 0!
-            0, 1, 3,   // first triangle
-            1, 2, 3    // second triangle
-    };
+    int new_trig_num = 3, offset = 0;
+    int cur_len = 9;
 
-    unsigned int VBO, VAO, EBO;
+    for (int i = 1; i <= 7; i++) {
+        for (int op_num = 0; op_num < new_trig_num; op_num++) {
+            miniTrigGen(vertices, &cur_len, offset);
+            offset += 9;
+        }
+        new_trig_num *= 3;
+    }
+
+    unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -101,7 +121,7 @@ int main()
 
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_TRIANGLES,  offset / 9, new_trig_num);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
