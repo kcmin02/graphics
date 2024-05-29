@@ -4,16 +4,19 @@
 
 const char *vertexShaderSource = "#version 330 core\n"
                                  "layout (location = 0) in vec3 aPos;\n"
+                                 "out vec4 vertexColor;\n"
                                  "void main()\n"
                                  "{\n"
                                  "    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+                                 "    vertexColor = vec4(0.5, 0.0, 0.0, 1.0);\n"
                                  "}\0";
 
 const char *fragmentShaderSource = "#version 330 core\n"
                                    "out vec4 FragColor;\n"
+                                   "uniform vec4 ourColor;\n"
                                    "void main()\n"
                                    "{\n"
-                                   "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+                                   "    FragColor = ourColor;\n"
                                    "}\0";
 
 void processInput(GLFWwindow *window)
@@ -44,7 +47,7 @@ void miniTrigGen(float* coords, int* cur_len, int par_trig)
 }
 
 float rt3 = 1.732;
-float vertices[150000] = {
+float vertices[50000] = {
         0,  rt3 / 2, 0.0f,
         -0.75f, -rt3 / 4, 0.0f,
         0.75f, -rt3 / 4, 0.0f,
@@ -90,7 +93,7 @@ int main()
     int new_trig_num = 3, offset = 0;
     int cur_len = 9;
 
-    for (int i = 1; i <= 7; i++) {
+    for (int i = 1; i <= 6; i++) {
         for (int op_num = 0; op_num < new_trig_num; op_num++) {
             miniTrigGen(vertices, &cur_len, offset);
             offset += 9;
@@ -116,10 +119,16 @@ int main()
     {
         processInput(window);
 
-        glClearColor(0.2f, 0.2f, 0.6f, 1.0f);
+        glClearColor(0.0f, 0.1f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
+
+        float timeValue = glfwGetTime();
+        float greenValue = sin(timeValue) / 2.0f + 0.5f;
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES,  offset / 9, new_trig_num);
 
